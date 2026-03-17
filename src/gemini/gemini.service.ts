@@ -1,0 +1,18 @@
+import { Injectable } from '@nestjs/common';
+import { BasicPromptDto } from './dtos/basic-prompt.dto';
+import { GoogleGenAI } from '@google/genai';
+import { basicPromptUseCase } from './use-cases/basic-prompt.use-case';
+
+@Injectable()
+export class GeminiService {
+    
+    private readonly ai = new GoogleGenAI({
+        apiKey: process.env.GOOGLE_API_KEY,
+    });
+
+    async basicPrompt(basicPromptDto: BasicPromptDto) {
+
+        return basicPromptUseCase(this.ai, basicPromptDto);
+
+    }
+}
