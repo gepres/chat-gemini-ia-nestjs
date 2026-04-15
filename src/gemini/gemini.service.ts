@@ -12,7 +12,7 @@ import { imageGenerationUseCase } from './use-cases/image-generation.use-case';
 export class GeminiService {
     
     private readonly ai = new GoogleGenAI({
-        apiKey: process.env.GOOGLE_API_KEY,
+        apiKey: process.env.GEMINI_API_KEY,
     });
 
     // TODO: mantener el memoria el historial

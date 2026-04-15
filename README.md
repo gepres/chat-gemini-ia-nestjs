@@ -1,82 +1,202 @@
+# Gemini Backend
 
-## Description
+Backend API construido con [NestJS](https://nestjs.com/) que integra la API de **Google Gemini** para ofrecer funcionalidades de inteligencia artificial: generacion de texto, chat conversacional con historial y generacion/edicion de imagenes.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Disenado como backend para una aplicacion movil en React Native.
 
-## Project setup
+## Caracteristicas
 
-```bash
-$ npm install
-```
+- **Prompt basico** - Enviar un prompt y recibir una respuesta de texto completa.
+- **Prompt con streaming** - Enviar un prompt (con archivos adjuntos opcionales) y recibir la respuesta en tiempo real via streaming.
+- **Chat con historial** - Conversaciones con contexto persistente en memoria, identificadas por `chatId`.
+- **Generacion/edicion de imagenes** - Generar o editar imagenes usando el modelo `gemini-2.5-flash-image`. Las imagenes generadas se guardan en `public/ai-images/`.
+- **Subida de archivos** - Soporte para multiples tipos de archivos (imagenes, PDFs, documentos Office) que se envian a Gemini como contexto.
 
-## Compile and run the project
+## Tecnologias
 
-```bash
-# development
-$ npm run start
+- [NestJS](https://nestjs.com/) v11
+- [Google GenAI SDK](https://www.npmjs.com/package/@google/genai) (`@google/genai`)
+- [Sharp](https://sharp.pixelplumbing.com/) - Procesamiento de imagenes
+- TypeScript
 
-# watch mode
-$ npm run start:dev
+## Requisitos previos
 
-# production mode
-$ npm run start:prod
-```
+- Node.js >= 18
+- Una API Key de Google Gemini ([obtener aqui](https://aistudio.google.com/apikey))
 
-## env
-
-```bash
-GEMINI_API_KEY=your-api-key
-```
-
-## Run tests
+## Instalacion
 
 ```bash
-# unit tests
-$ npm run test
+# Clonar el repositorio
+git clone <url-del-repositorio>
+cd gemini-backend
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Instalar dependencias
+npm install
 ```
 
-## Deployment
+## Configuracion
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Crear un archivo `.env` en la raiz del proyecto basandose en `.env.template`:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+GEMINI_API_KEY=tu-api-key-de-gemini
+API_URL=http://localhost:3000
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+| Variable         | Descripcion                                                                 |
+| ---------------- | --------------------------------------------------------------------------- |
+| `GEMINI_API_KEY` | API Key de Google Gemini                                                    |
+| `API_URL`        | URL base del servidor (usada para generar URLs de imagenes generadas)       |
 
-## Resources
+## Ejecucion
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# Modo desarrollo (con hot reload)
+npm run start:dev
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Modo produccion
+npm run build
+npm run start:prod
+```
 
-## Support
+El servidor se inicia en `http://localhost:3000` (o el puerto definido en la variable de entorno `PORT`).
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Endpoints
 
-## Stay in touch
+Todos los endpoints tienen el prefijo `/api/gemini`.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### POST `/api/gemini/basic-prompt`
 
-## License
+Enviar un prompt y recibir la respuesta completa.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Body (JSON):**
+```json
+{
+  "prompt": "Explica que es TypeScript"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "TypeScript es..."
+}
+```
+
+---
+
+### POST `/api/gemini/basic-prompt-stream`
+
+Enviar un prompt con archivos opcionales y recibir la respuesta en streaming (`text/plain`).
+
+**Body (multipart/form-data):**
+| Campo    | Tipo     | Requerido | Descripcion              |
+| -------- | -------- | --------- | ------------------------ |
+| `prompt` | string   | Si        | Texto del prompt         |
+| `files`  | file[]   | No        | Archivos adjuntos        |
+
+**Respuesta:** `text/plain` (streaming)
+
+---
+
+### POST `/api/gemini/chat-prompt-stream`
+
+Chat conversacional con historial. Cada conversacion se identifica con un `chatId` (UUID).
+
+**Body (multipart/form-data):**
+| Campo    | Tipo     | Requerido | Descripcion              |
+| -------- | -------- | --------- | ------------------------ |
+| `prompt` | string   | Si        | Mensaje del usuario      |
+| `chatId` | string   | Si        | UUID de la conversacion  |
+| `files`  | file[]   | No        | Archivos adjuntos        |
+
+**Respuesta:** `text/plain` (streaming)
+
+---
+
+### GET `/api/gemini/chat-history/:chatId`
+
+Obtener el historial de una conversacion.
+
+**Respuesta:**
+```json
+[
+  { "role": "user", "parts": "Hola, como estas?" },
+  { "role": "model", "parts": "Hola! Estoy bien..." }
+]
+```
+
+---
+
+### POST `/api/gemini/image-generation`
+
+Generar o editar imagenes. Se pueden enviar imagenes existentes para editarlas.
+
+**Body (multipart/form-data):**
+| Campo    | Tipo     | Requerido | Descripcion                          |
+| -------- | -------- | --------- | ------------------------------------ |
+| `prompt` | string   | Si        | Descripcion de la imagen a generar   |
+| `files`  | file[]   | No        | Imagenes base para edicion           |
+
+**Respuesta:**
+```json
+{
+  "imageUrl": "http://localhost:3000/ai-images/uuid.png",
+  "text": "Descripcion de la imagen generada"
+}
+```
+
+## Estructura del proyecto
+
+```
+src/
+├── main.ts                              # Bootstrap de la aplicacion
+├── app.module.ts                        # Modulo raiz
+└── gemini/
+    ├── gemini.module.ts                 # Modulo Gemini
+    ├── gemini.controller.ts             # Controlador con los endpoints
+    ├── gemini.service.ts                # Servicio principal
+    ├── dtos/
+    │   ├── basic-prompt.dto.ts          # DTO para prompts basicos
+    │   ├── chat-prompt.dto.ts           # DTO para chat
+    │   └── image-generation.dto.ts      # DTO para generacion de imagenes
+    ├── helpers/
+    │   └── gemini-upload-file.ts        # Helper para subir archivos a Gemini
+    └── use-cases/
+        ├── basic-prompt.use-case.ts     # Caso de uso: prompt basico
+        ├── basic-prompt-stream.use-case.ts  # Caso de uso: prompt con streaming
+        ├── chat-prompt-stream.use-case.ts   # Caso de uso: chat con streaming
+        └── image-generation.use-case.ts     # Caso de uso: generacion de imagenes
+public/
+└── ai-images/                           # Imagenes generadas por la IA
+```
+
+## Archivos soportados
+
+El sistema acepta los siguientes tipos de archivos para enviar como contexto a Gemini:
+
+| Tipo       | Extensiones                    |
+| ---------- | ------------------------------ |
+| Imagenes   | `.jpg`, `.jpeg`, `.png`, `.gif`, `.svg` |
+| Documentos | `.pdf`, `.doc`, `.docx`        |
+| Hojas      | `.xls`, `.xlsx`                |
+| Presentaciones | `.ppt`, `.pptx`            |
+
+## Scripts disponibles
+
+| Comando              | Descripcion                        |
+| -------------------- | ---------------------------------- |
+| `npm run start`      | Iniciar en modo desarrollo         |
+| `npm run start:dev`  | Iniciar con hot reload             |
+| `npm run start:prod` | Iniciar en modo produccion         |
+| `npm run build`      | Compilar el proyecto               |
+| `npm run lint`       | Ejecutar linter                    |
+| `npm run test`       | Ejecutar tests unitarios           |
+| `npm run test:e2e`   | Ejecutar tests end-to-end          |
+
+## Notas
+
+- El historial de chat se mantiene **en memoria** (se pierde al reiniciar el servidor).
+- Las imagenes generadas se almacenan en la carpeta `public/ai-images/` y se sirven como archivos estaticos.
+- Las respuestas de texto estan configuradas para responder en espanol y formato markdown.
