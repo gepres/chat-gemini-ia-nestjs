@@ -35,7 +35,7 @@ export const imageGenerationUseCase = async (ai: GoogleGenAI, imageGenerationDto
     })
 
     const {
-        model = 'gemini-2.5-flash-image',
+        model = 'gemini-3.1-flash-image-preview',
     } = options ?? {};
 
     const response = await ai.models.generateContent({
